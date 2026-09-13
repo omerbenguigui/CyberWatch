@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="CyberWatch security operations dashboard" />
+    <title>CyberWatch | Security Operations</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">CW</span>
+        <div><strong>CyberWatch</strong><small>Security Operations Center</small></div>
+      </div>
+      <div class="system-status"><span class="pulse"></span> Monitoring active</div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">REAL-TIME THREAT VISIBILITY</p>
+          <h1>Security overview</h1>
+          <p class="subtitle">Events are analyzed by explainable detection rules as they arrive.</p>
+        </div>
+        <div class="last-updated">Last updated <span id="updated-at">—</span></div>
+      </section>
+
+      <section class="metrics" aria-label="Security metrics">
+        <article class="metric"><span>Total events</span><strong id="total-events">0</strong><small>Ingested telemetry</small></article>
+        <article class="metric warning"><span>Open alerts</span><strong id="open-alerts">0</strong><small>Needs investigation</small></article>
+        <article class="metric danger"><span>Critical alerts</span><strong id="critical-alerts">0</strong><small>Immediate attention</small></article>
+        <article class="metric"><span>Unique sources</span><strong id="unique-sources">0</strong><small>Observed IP addresses</small></article>
+      </section>
+
+      <section class="grid">
+        <article class="panel chart-panel">
+          <div class="panel-heading"><div><p class="eyebrow">TELEMETRY</p><h2>Events by type</h2></div></div>
+          <div id="event-chart" class="bar-chart"><p class="empty">Waiting for event data…</p></div>
+        </article>
+        <article class="panel severity-panel">
+          <div class="panel-heading"><div><p class="eyebrow">RISK PROFILE</p><h2>Alert severity</h2></div></div>
+          <div id="severity-chart" class="severity-chart"><p class="empty">No alerts detected.</p></div>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">DETECTION QUEUE</p><h2>Recent alerts</h2></div>
+          <select id="severity-filter" aria-label="Filter alerts by severity">
+            <option value="">All severities</option><option value="critical">Critical</option>
+            <option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
+          </select>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Time</th><th>Severity</th><th>Rule</th><th>Detection</th><th>Source</th><th>Status</th></tr></thead><tbody id="alerts-body"></tbody></table></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading"><div><p class="eyebrow">LIVE FEED</p><h2>Latest events</h2></div><a href="/docs">API documentation →</a></div>
+        <div class="table-wrap"><table><thead><tr><th>Time</th><th>Type</th><th>Source</th><th>Destination</th><th>User</th><th>Message</th></tr></thead><tbody id="events-body"></tbody></table></div>
+      </section>
+    </main>
+
+    <footer>CyberWatch Mini-SIEM · Built with Python and FastAPI</footer>
+    <div id="error-toast" role="alert"></div>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
+

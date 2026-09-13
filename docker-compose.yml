@@ -1,0 +1,16 @@
+services:
+  cyberwatch:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      CYBERWATCH_ENV: production
+      CYBERWATCH_API_KEY: ${CYBERWATCH_API_KEY:?Set CYBERWATCH_API_KEY in your environment}
+      CYBERWATCH_DATABASE_PATH: /app/data/cyberwatch.db
+    volumes:
+      - cyberwatch-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  cyberwatch-data:
+
