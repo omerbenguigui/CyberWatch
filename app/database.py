@@ -61,9 +61,13 @@ class Database:
         self.path = Path(path)
         self._schema_lock = Lock()
         self._initialized = False
+        self._transaction_connection: sqlite3.Connection | None = None
 
     @contextmanager
     def connection(self) -> Iterator[sqlite3.Connection]:
+        if self._transaction_connection is not None:
+            yield self._transaction_connection
+            return
         self.path.parent.mkdir(parents=True, exist_ok=True)
         connection = sqlite3.connect(self.path, timeout=10)
         connection.row_factory = sqlite3.Row
@@ -77,6 +81,20 @@ class Database:
             raise
         finally:
             connection.close()
+
+    @contextmanager
+    def transaction(self) -> Iterator[Database]:
+        """Yield a separate, single-threaded repository sharing one atomic transaction."""
+        self.initialize()
+        with self.connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            repository = Database(self.path)
+            repository._initialized = True
+            repository._transaction_connection = connection
+            try:
+                yield repository
+            finally:
+                repository._transaction_connection = None
 
     def initialize(self) -> None:
         with self._schema_lock:

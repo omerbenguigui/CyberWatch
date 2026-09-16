@@ -23,6 +23,18 @@ def test_health_endpoint(tmp_path):
     assert response.json()["status"] == "healthy"
 
 
+def test_dashboard_assets_and_favicon(tmp_path):
+    with make_client(tmp_path) as client:
+        assert '/static/favicon.svg' in client.get('/').text
+        for path in (
+            '/static/styles.css', '/static/app.js', '/static/favicon.svg', '/favicon.ico'
+        ):
+            response = client.get(path)
+            assert response.status_code == 200
+            assert response.content
+        assert client.get('/favicon.ico').headers['content-type'] == 'image/svg+xml'
+
+
 def test_ingestion_requires_api_key(tmp_path):
     with make_client(tmp_path) as client:
         response = client.post(

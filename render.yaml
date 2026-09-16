@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: cyberwatch
+    runtime: python
+    plan: 0.5c-512mb
+    buildCommand: python -m pip install .
+    startCommand: python -m scripts.generate_demo_data && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    autoDeployTrigger: "off"
+    disk:
+      name: cyberwatch-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: CYBERWATCH_ENV
+        value: production
+      - key: CYBERWATCH_DATABASE_PATH
+        value: /var/data/cyberwatch.db
+      - key: CYBERWATCH_API_KEY
+        generateValue: true

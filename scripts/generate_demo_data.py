@@ -69,17 +69,28 @@ def generate_events(now: datetime | None = None) -> list[LogEventCreate]:
     return sorted(events, key=lambda event: event.timestamp)
 
 
+def seed_demo(database: Database) -> tuple[int, int]:
+    """Populate an empty database once, atomically, including detection alerts."""
+    with database.transaction() as repository:
+        if repository.list_events(limit=1):
+            return 0, 0
+        detector = DetectionEngine(repository)
+        alert_count = 0
+        events = generate_events()
+        for payload in events:
+            event = repository.insert_event(payload)
+            alert_count += len(detector.evaluate(event))
+        return len(events), alert_count
+
+
 def main() -> None:
     settings = Settings.from_environment()
     database = Database(settings.database_path)
-    database.initialize()
-    detector = DetectionEngine(database)
-    alert_count = 0
-    events = generate_events()
-    for payload in events:
-        event = database.insert_event(payload)
-        alert_count += len(detector.evaluate(event))
-    print(f"Inserted {len(events)} synthetic events and generated {alert_count} alerts.")
+    event_count, alert_count = seed_demo(database)
+    if event_count:
+        print(f"Inserted {event_count} synthetic events and generated {alert_count} alerts.")
+    else:
+        print("Demo skipped: database already contains events; existing data was preserved.")
 
 
 if __name__ == "__main__":

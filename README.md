@@ -5,6 +5,8 @@ applies explainable detection rules, creates alerts, and presents the result in 
 SOC dashboard. It was built as a portfolio project to demonstrate Python backend engineering,
 security fundamentals, API design, testing, and deployment practices.
 
+![CyberWatch dashboard showing 42 synthetic events and three security alerts](docs/images/dashboard.png)
+
 ## Highlights
 
 - FastAPI REST API with automatic OpenAPI documentation
@@ -43,6 +45,19 @@ Repeated alerts for the same rule and source are suppressed for ten minutes to r
 fatigue.
 
 ## Quick start
+
+### Windows: one click
+
+Install Python 3.11+ with the Python launcher or **Add Python to PATH**, then double-click
+[`start_windows.bat`](start_windows.bat). It creates `.venv` if needed, installs the project
+and development tools, seeds an empty database, and serves <http://localhost:8000>.
+Internet access is required to install dependencies. Keep the console open; press Ctrl+C to stop.
+If setup fails, the console stays open with the error. Existing environment variables are respected.
+If port 8000 is busy, set `CYBERWATCH_PORT` to another port before running the launcher.
+
+Demo generation is atomic and only runs when the database has no events. Running it again,
+including two concurrent launches, preserves existing events and alerts instead of adding
+another 42 events. It does not delete duplicates that were already present.
 
 ### Local Python setup
 
@@ -88,6 +103,22 @@ $env:CYBERWATCH_API_KEY="replace-with-a-long-random-value"
 docker compose up --build
 ```
 
+### Render
+
+[`render.yaml`](render.yaml) defines a Python web service with a generated API key,
+`/api/health` health check, and a 1 GB persistent disk for SQLite. It uses a **paid**
+`0.5c-512mb` service because persistent disks are unavailable on free services.
+See Render's [Blueprint reference](https://render.com/docs/blueprint-spec) and
+[persistent disk documentation](https://render.com/docs/disks).
+
+After approving and pushing the repository, create a Blueprint in Render and select this
+repository. Review the cost before deploying. Demo data is seeded on the first start only;
+restarts preserve the database. Automatic deploys are disabled. The generated
+`CYBERWATCH_API_KEY` is available in Render's environment settings for ingestion requests.
+The dashboard uses same-origin requests; set `CYBERWATCH_ALLOWED_ORIGINS` only if a separate
+frontend needs access. The dashboard and read APIs are public, so use synthetic data for
+a public portfolio deployment.
+
 ## Ingest an event
 
 The development API key is `dev-key-change-me`. It must be overridden in production.
@@ -127,6 +158,8 @@ Supported event types are `login_success`, `login_failed`, `network_connection`,
 ruff check .
 bandit -q -r app scripts
 pytest
+node --check app/static/app.js
+python -m build
 ```
 
 The test suite covers detection thresholds, time windows, duplicate suppression, authentication,

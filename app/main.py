@@ -71,6 +71,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def dashboard() -> FileResponse:
         return FileResponse(STATIC_DIR / "index.html")
 
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon() -> FileResponse:
+        return FileResponse(STATIC_DIR / "favicon.svg", media_type="image/svg+xml")
+
     @app.get("/api/health", tags=["system"])
     def health() -> dict[str, str]:
         return {"status": "healthy", "service": "cyberwatch", "version": "1.0.0"}

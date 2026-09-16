@@ -1,0 +1,2 @@
+include start_windows.bat render.yaml
+recursive-include docs/images *.png
