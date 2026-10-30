@@ -160,7 +160,15 @@ python -m build
 ```
 
 The test suite covers detection thresholds, time windows, duplicate suppression, authentication,
-event ingestion, alert triage, and dashboard aggregation.
+event ingestion, safe attack simulations, alert investigation updates, and dashboard aggregation.
+
+## What I learned
+
+Building CyberWatch strengthened my understanding of end-to-end backend development and
+defensive-security workflows: turning raw telemetry into explainable detections, designing a
+secure API, evolving a database schema safely, and presenting investigation context clearly to
+an analyst. I also practiced automated testing, CI, packaging, Docker, and documenting technical
+decisions so another developer can run and review the project quickly.
 
 ## Security decisions
 
@@ -186,4 +194,4 @@ synthetic events and does not perform network scanning or exploitation.
 
 ## Author
 
-**Omer Ben Gigi** — Computer Science student focused on software development and cybersecurity.
+**Omer Benguigui** — Computer Science student focused on software development and cybersecurity.

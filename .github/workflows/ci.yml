@@ -33,3 +33,5 @@ jobs:
         run: node --check app/static/app.js
       - name: Build source distribution and wheel
         run: python -m build
+      - name: Build Docker image
+        run: docker build -t cyberwatch:ci .
