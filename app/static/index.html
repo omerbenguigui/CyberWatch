@@ -24,7 +24,19 @@
           <h1>Security overview</h1>
           <p class="subtitle">Events are analyzed by explainable detection rules as they arrive.</p>
         </div>
-        <div class="last-updated">Last updated <span id="updated-at">—</span></div>
+        <div class="hero-actions">
+          <div class="simulation-menu" id="simulation-menu">
+            <button class="primary-button" id="simulation-toggle" type="button">
+              <span aria-hidden="true">▶</span> Simulate attack
+            </button>
+            <div class="simulation-options" id="simulation-options" hidden>
+              <button type="button" data-scenario="brute_force"><strong>Brute force</strong><small>5 failed logins</small></button>
+              <button type="button" data-scenario="port_scan"><strong>Port scan</strong><small>10 probed ports</small></button>
+              <button type="button" data-scenario="suspicious_process"><strong>Malicious process</strong><small>Encoded PowerShell</small></button>
+            </div>
+          </div>
+          <div class="last-updated">Last updated <span id="updated-at">—</span></div>
+        </div>
       </section>
 
       <section class="metrics" aria-label="Security metrics">
@@ -48,12 +60,18 @@
       <section class="panel">
         <div class="panel-heading">
           <div><p class="eyebrow">DETECTION QUEUE</p><h2>Recent alerts</h2></div>
-          <select id="severity-filter" aria-label="Filter alerts by severity">
-            <option value="">All severities</option><option value="critical">Critical</option>
-            <option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
-          </select>
+          <div class="filters">
+            <select id="status-filter" aria-label="Filter alerts by status">
+              <option value="">All statuses</option><option value="open">Open</option>
+              <option value="investigating">Investigating</option><option value="resolved">Resolved</option>
+            </select>
+            <select id="severity-filter" aria-label="Filter alerts by severity">
+              <option value="">All severities</option><option value="critical">Critical</option>
+              <option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>
+            </select>
+          </div>
         </div>
-        <div class="table-wrap"><table><thead><tr><th>Time</th><th>Severity</th><th>Rule</th><th>Detection</th><th>Source</th><th>Status</th></tr></thead><tbody id="alerts-body"></tbody></table></div>
+        <div class="table-wrap"><table><thead><tr><th>Time</th><th>Severity</th><th>Rule</th><th>Detection</th><th>MITRE ATT&amp;CK</th><th>Source</th><th>Status</th></tr></thead><tbody id="alerts-body"></tbody></table></div>
       </section>
 
       <section class="panel">
@@ -63,8 +81,19 @@
     </main>
 
     <footer>CyberWatch Mini-SIEM · Built with Python and FastAPI</footer>
-    <div id="error-toast" role="alert"></div>
+    <dialog id="alert-dialog" class="alert-dialog">
+      <div class="dialog-heading">
+        <div><p class="eyebrow">INCIDENT INVESTIGATION</p><h2 id="dialog-title">Alert details</h2></div>
+        <button class="icon-button" id="dialog-close" aria-label="Close alert details">×</button>
+      </div>
+      <div id="dialog-content"></div>
+      <form id="triage-form">
+        <label>Status<select id="alert-status"><option value="open">Open</option><option value="investigating">Investigating</option><option value="resolved">Resolved</option></select></label>
+        <label>Analyst note<textarea id="analyst-note" maxlength="1000" placeholder="Add investigation findings…"></textarea></label>
+        <div class="dialog-actions"><button class="secondary-button" id="dialog-cancel" type="button">Cancel</button><button class="primary-button" type="submit">Save investigation</button></div>
+      </form>
+    </dialog>
+    <div id="toast" role="status"></div>
     <script src="/static/app.js" defer></script>
   </body>
 </html>
-

@@ -73,7 +73,13 @@ class DetectionEngine:
             ),
             severity=Severity.HIGH,
             source_ip=event.source_ip,
-            evidence={"failed_attempts": len(failures), "usernames": usernames},
+            evidence={
+                "failed_attempts": len(failures),
+                "usernames": usernames,
+                "mitre_id": "T1110",
+                "mitre_tactic": "Credential Access",
+                "mitre_technique": "Brute Force",
+            },
         )
 
     def _detect_port_scan(self, event: LogEvent) -> AlertCreate | None:
@@ -94,7 +100,13 @@ class DetectionEngine:
             ),
             severity=Severity.CRITICAL,
             source_ip=event.source_ip,
-            evidence={"distinct_ports": port_count, "window_seconds": 120},
+            evidence={
+                "distinct_ports": port_count,
+                "window_seconds": 120,
+                "mitre_id": "T1046",
+                "mitre_tactic": "Discovery",
+                "mitre_technique": "Network Service Discovery",
+            },
         )
 
     def _detect_suspicious_process(self, event: LogEvent) -> AlertCreate | None:
@@ -114,5 +126,10 @@ class DetectionEngine:
             ),
             severity=Severity.CRITICAL,
             source_ip=event.source_ip,
-            evidence={"matched_indicators": matches},
+            evidence={
+                "matched_indicators": matches,
+                "mitre_id": "T1059.001",
+                "mitre_tactic": "Execution",
+                "mitre_technique": "PowerShell",
+            },
         )

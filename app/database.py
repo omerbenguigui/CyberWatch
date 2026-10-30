@@ -11,7 +11,15 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-from app.models import Alert, AlertCreate, AlertStatus, LogEvent, LogEventCreate, Severity
+from app.models import (
+    Alert,
+    AlertCreate,
+    AlertStatus,
+    AlertUpdate,
+    LogEvent,
+    LogEventCreate,
+    Severity,
+)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS events (
@@ -38,7 +46,8 @@ CREATE TABLE IF NOT EXISTS alerts (
     severity TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'open',
     source_ip TEXT NOT NULL,
-    evidence TEXT NOT NULL DEFAULT '{}'
+    evidence TEXT NOT NULL DEFAULT '{}',
+    analyst_note TEXT NOT NULL DEFAULT ''
 );
 
 CREATE INDEX IF NOT EXISTS idx_alerts_created ON alerts(created_at DESC);
@@ -102,6 +111,12 @@ class Database:
                 return
             with self.connection() as connection:
                 connection.executescript(SCHEMA)
+                table_info = connection.execute("PRAGMA table_info(alerts)").fetchall()
+                columns = {row["name"] for row in table_info}
+                if "analyst_note" not in columns:
+                    connection.execute(
+                        "ALTER TABLE alerts ADD COLUMN analyst_note TEXT NOT NULL DEFAULT ''"
+                    )
             self._initialized = True
 
     def insert_event(self, event: LogEventCreate) -> LogEvent:
@@ -168,8 +183,8 @@ class Database:
                 """
                 INSERT INTO alerts (
                     created_at, rule_id, title, description, severity,
-                    status, source_ip, evidence
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    status, source_ip, evidence, analyst_note
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     _iso(alert.created_at),
@@ -180,10 +195,11 @@ class Database:
                     AlertStatus.OPEN.value,
                     alert.source_ip,
                     json.dumps(alert.evidence, separators=(",", ":"), sort_keys=True),
+                    "",
                 ),
             )
             alert_id = int(cursor.lastrowid or 0)
-        return Alert(id=alert_id, status=AlertStatus.OPEN, **alert.model_dump())
+        return Alert(id=alert_id, status=AlertStatus.OPEN, analyst_note="", **alert.model_dump())
 
     def has_recent_alert(self, rule_id: str, source_ip: str, since: datetime) -> bool:
         self.initialize()
@@ -239,15 +255,28 @@ class Database:
             row = connection.execute("SELECT * FROM alerts WHERE id = ?", (alert_id,)).fetchone()
         return self._alert_from_row(row)
 
+    def update_alert(self, alert_id: int, update: AlertUpdate) -> Alert | None:
+        self.initialize()
+        with self.connection() as connection:
+            cursor = connection.execute(
+                "UPDATE alerts SET status = ?, analyst_note = ? WHERE id = ?",
+                (update.status.value, update.analyst_note, alert_id),
+            )
+            if cursor.rowcount == 0:
+                return None
+            row = connection.execute("SELECT * FROM alerts WHERE id = ?", (alert_id,)).fetchone()
+        return self._alert_from_row(row)
+
     def dashboard_summary(self) -> dict[str, Any]:
         self.initialize()
         with self.connection() as connection:
             total_events = connection.execute("SELECT COUNT(*) FROM events").fetchone()[0]
             open_alerts = connection.execute(
-                "SELECT COUNT(*) FROM alerts WHERE status = 'open'"
+                "SELECT COUNT(*) FROM alerts WHERE status IN ('open', 'investigating')"
             ).fetchone()[0]
             critical_alerts = connection.execute(
-                "SELECT COUNT(*) FROM alerts WHERE severity = 'critical' AND status = 'open'"
+                """SELECT COUNT(*) FROM alerts
+                WHERE severity = 'critical' AND status IN ('open', 'investigating')"""
             ).fetchone()[0]
             unique_sources = connection.execute(
                 "SELECT COUNT(DISTINCT source_ip) FROM events"
@@ -307,4 +336,5 @@ class Database:
             status=row["status"],
             source_ip=row["source_ip"],
             evidence=json.loads(row["evidence"]),
+            analyst_note=row["analyst_note"],
         )

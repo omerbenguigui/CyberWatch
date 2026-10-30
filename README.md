@@ -1,22 +1,32 @@
 # CyberWatch Mini-SIEM
 
+[![CI](https://github.com/omerbenguigui/CyberWatch/actions/workflows/ci.yml/badge.svg)](https://github.com/omerbenguigui/CyberWatch/actions/workflows/ci.yml)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-4e8cff)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-25d9e8)](https://fastapi.tiangolo.com/)
+
 CyberWatch is a lightweight security monitoring platform that ingests structured events,
 applies explainable detection rules, creates alerts, and presents the result in a responsive
 SOC dashboard. It was built as a portfolio project to demonstrate Python backend engineering,
-security fundamentals, API design, testing, and deployment practices.
+security fundamentals, API design, testing, and product-quality user experience.
 
-![CyberWatch dashboard showing 42 synthetic events and three security alerts](docs/images/dashboard.png)
+![Animated CyberWatch product walkthrough](docs/images/cyberwatch-demo.gif)
+
+[Watch the full HD walkthrough](docs/demo/cyberwatch-walkthrough.mp4) ·
+[View the dashboard screenshot](docs/images/dashboard.png)
 
 ## Highlights
 
 - FastAPI REST API with automatic OpenAPI documentation
 - Real-time, rule-based detection for brute force, port scanning, and suspicious processes
+- One-click safe attack simulations that generate synthetic telemetry only
+- MITRE ATT&CK mappings for every bundled detection rule
+- Interactive alert investigation with status transitions and analyst notes
 - SQLite persistence with indexed, parameterized queries
 - API-key protection for ingestion and alert-triage operations
 - Responsive SOC dashboard with event and severity visualizations
 - Batch event ingestion and alert deduplication cooldowns
 - Synthetic demo-data generator (no real attack traffic required)
-- Automated tests, linting, Docker image, health checks, and GitHub Actions CI
+- 20 automated tests, 96% coverage, linting, security scanning, and GitHub Actions CI
 
 ## Architecture
 
@@ -35,11 +45,11 @@ alert includes a rule ID, evidence, source, severity, and human-readable explana
 
 ## Detection rules
 
-| Rule ID | Detection | Trigger | Severity |
-| --- | --- | --- | --- |
-| `CW-AUTH-001` | Brute-force attempt | 5 failed logins from one IP in 5 minutes | High |
-| `CW-NET-001` | Port scan | 10 distinct destination ports from one IP in 2 minutes | Critical |
-| `CW-ENDPOINT-001` | Suspicious process | Command line matches risky script-execution indicators | Critical |
+| Rule ID | Detection | Trigger | Severity | MITRE ATT&CK |
+| --- | --- | --- | --- | --- |
+| `CW-AUTH-001` | Brute-force attempt | 5 failed logins from one IP in 5 minutes | High | `T1110` Brute Force |
+| `CW-NET-001` | Port scan | 10 distinct destination ports from one IP in 2 minutes | Critical | `T1046` Network Service Discovery |
+| `CW-ENDPOINT-001` | Suspicious process | Command line matches risky script-execution indicators | Critical | `T1059.001` PowerShell |
 
 Repeated alerts for the same rule and source are suppressed for ten minutes to reduce analyst
 fatigue.
@@ -50,7 +60,8 @@ fatigue.
 
 Install Python 3.11+ with the Python launcher or **Add Python to PATH**, then double-click
 [`start_windows.bat`](start_windows.bat). It creates `.venv` if needed, installs the project
-and development tools, seeds an empty database, and serves <http://localhost:8000>.
+runtime dependencies, seeds an empty database, starts the server, and opens the dashboard in
+the default browser automatically.
 Internet access is required to install dependencies. Keep the console open; press Ctrl+C to stop.
 If setup fails, the console stays open with the error. Existing environment variables are respected.
 If port 8000 is busy, set `CYBERWATCH_PORT` to another port before running the launcher.
@@ -103,22 +114,6 @@ $env:CYBERWATCH_API_KEY="replace-with-a-long-random-value"
 docker compose up --build
 ```
 
-### Render
-
-[`render.yaml`](render.yaml) defines a Python web service with a generated API key,
-`/api/health` health check, and a 1 GB persistent disk for SQLite. It uses a **paid**
-`0.5c-512mb` service because persistent disks are unavailable on free services.
-See Render's [Blueprint reference](https://render.com/docs/blueprint-spec) and
-[persistent disk documentation](https://render.com/docs/disks).
-
-After approving and pushing the repository, create a Blueprint in Render and select this
-repository. Review the cost before deploying. Demo data is seeded on the first start only;
-restarts preserve the database. Automatic deploys are disabled. The generated
-`CYBERWATCH_API_KEY` is available in Render's environment settings for ingestion requests.
-The dashboard uses same-origin requests; set `CYBERWATCH_ALLOWED_ORIGINS` only if a separate
-frontend needs access. The dashboard and read APIs are public, so use synthetic data for
-a public portfolio deployment.
-
 ## Ingest an event
 
 The development API key is `dev-key-change-me`. It must be overridden in production.
@@ -150,7 +145,9 @@ Supported event types are `login_success`, `login_failed`, `network_connection`,
 | `GET` | `/api/events` | No | Search recent events |
 | `GET` | `/api/alerts` | No | Filter recent alerts |
 | `PATCH` | `/api/alerts/{id}/acknowledge` | API key | Triage an alert |
+| `PATCH` | `/api/alerts/{id}` | API key | Update status and analyst note |
 | `GET` | `/api/dashboard/summary` | No | Aggregated dashboard metrics |
+| `POST` | `/api/demo/simulate/{scenario}` | Local demo only | Generate safe synthetic attack telemetry |
 
 ## Tests and quality checks
 
@@ -170,6 +167,7 @@ event ingestion, alert triage, and dashboard aggregation.
 - Mutating endpoints use a constant-time API-key comparison.
 - SQL statements use parameters rather than string interpolation for user-controlled values.
 - Production startup fails when the default development API key is still configured.
+- Interactive attack simulations are disabled automatically in production mode.
 - Batch size and field lengths are bounded to reduce accidental resource exhaustion.
 - The Docker container runs as an unprivileged user.
 - The CI workflow has read-only repository permissions.
@@ -184,7 +182,7 @@ synthetic events and does not perform network scanning or exploitation.
 - Sigma-compatible custom detection rules
 - Email or Slack notifications
 - PCAP and syslog collectors
-- Alert investigation notes and case management
+- Multi-user case ownership and investigation timelines
 
 ## Author
 

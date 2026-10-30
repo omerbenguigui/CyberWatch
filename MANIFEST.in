@@ -1,2 +1,3 @@
-include start_windows.bat render.yaml
-recursive-include docs/images *.png
+include start_windows.bat
+recursive-include docs/images *.png *.gif
+recursive-include docs/demo *.mp4

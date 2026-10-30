@@ -27,6 +27,8 @@ class Severity(StrEnum):
 
 class AlertStatus(StrEnum):
     OPEN = "open"
+    INVESTIGATING = "investigating"
+    RESOLVED = "resolved"
     ACKNOWLEDGED = "acknowledged"
 
 
@@ -64,6 +66,7 @@ class Alert(BaseModel):
     status: AlertStatus
     source_ip: str
     evidence: dict[str, Any]
+    analyst_note: str = ""
 
 
 class AlertCreate(BaseModel):
@@ -74,6 +77,13 @@ class AlertCreate(BaseModel):
     severity: Severity
     source_ip: str
     evidence: dict[str, Any] = Field(default_factory=dict)
+
+
+class AlertUpdate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    status: AlertStatus
+    analyst_note: str = Field(default="", max_length=1000)
 
 
 class DashboardSummary(BaseModel):
@@ -89,3 +99,10 @@ class BatchIngestResult(BaseModel):
     accepted: int
     generated_alerts: int
     event_ids: list[int]
+
+
+class DemoSimulationResult(BaseModel):
+    scenario: str
+    accepted: int
+    generated_alerts: int
+    source_ip: str

@@ -19,12 +19,15 @@ from app.detection import DetectionEngine
 from app.models import (
     Alert,
     AlertStatus,
+    AlertUpdate,
     BatchIngestResult,
     DashboardSummary,
+    DemoSimulationResult,
     LogEvent,
     LogEventCreate,
     Severity,
 )
+from app.simulation import DemoScenario, run_simulation
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -145,6 +148,34 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if alert is None:
             raise HTTPException(status_code=404, detail="Alert not found")
         return alert
+
+    @app.patch(
+        "/api/alerts/{alert_id}",
+        response_model=Alert,
+        dependencies=[Depends(require_api_key)],
+        tags=["alerts"],
+    )
+    def update_alert(alert_id: int, payload: AlertUpdate, request: Request) -> Alert:
+        alert = request.app.state.database.update_alert(alert_id, payload)
+        if alert is None:
+            raise HTTPException(status_code=404, detail="Alert not found")
+        return alert
+
+    @app.post(
+        "/api/demo/simulate/{scenario}",
+        response_model=DemoSimulationResult,
+        tags=["demo"],
+    )
+    def simulate_attack(scenario: DemoScenario, request: Request) -> DemoSimulationResult:
+        if current_settings.environment == "production":
+            raise HTTPException(
+                status_code=403, detail="Demo simulations are disabled in production"
+            )
+        return run_simulation(request.app.state.database, request.app.state.detector, scenario)
+
+    @app.get("/api/demo/status", tags=["demo"])
+    def demo_status() -> dict[str, bool]:
+        return {"enabled": current_settings.environment != "production"}
 
     @app.get("/api/dashboard/summary", response_model=DashboardSummary, tags=["dashboard"])
     def dashboard_summary(request: Request) -> DashboardSummary:

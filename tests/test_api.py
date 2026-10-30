@@ -90,6 +90,51 @@ def test_alert_can_be_acknowledged(tmp_path):
     assert response.json()["status"] == "acknowledged"
 
 
+def test_alert_investigation_can_be_updated(tmp_path):
+    with make_client(tmp_path) as client:
+        simulation = client.post("/api/demo/simulate/suspicious_process")
+        alert = client.get("/api/alerts").json()[0]
+        response = client.patch(
+            f"/api/alerts/{alert['id']}",
+            headers={"X-API-Key": "test-secret"},
+            json={"status": "investigating", "analyst_note": "Escalated to endpoint team."},
+        )
+        summary = client.get("/api/dashboard/summary")
+    assert simulation.status_code == 200
+    assert response.status_code == 200
+    assert response.json()["status"] == "investigating"
+    assert response.json()["analyst_note"] == "Escalated to endpoint team."
+    assert summary.json()["open_alerts"] == 1
+
+
+def test_demo_simulations_generate_mitre_mapped_alerts(tmp_path):
+    with make_client(tmp_path) as client:
+        results = [
+            client.post(f"/api/demo/simulate/{scenario}")
+            for scenario in ("brute_force", "port_scan", "suspicious_process")
+        ]
+        alerts = client.get("/api/alerts").json()
+    assert [result.status_code for result in results] == [200, 200, 200]
+    assert [result.json()["generated_alerts"] for result in results] == [1, 1, 1]
+    assert {alert["evidence"]["mitre_id"] for alert in alerts} == {
+        "T1110",
+        "T1046",
+        "T1059.001",
+    }
+
+
+def test_demo_simulation_is_disabled_in_production(tmp_path):
+    settings = Settings(
+        environment="production",
+        database_path=tmp_path / "production.db",
+        api_key="production-secret",
+        allowed_origins=("http://testserver",),
+    )
+    with TestClient(create_app(settings)) as client:
+        response = client.post("/api/demo/simulate/brute_force")
+    assert response.status_code == 403
+
+
 def test_dashboard_summary(tmp_path):
     with make_client(tmp_path) as client:
         client.post(
