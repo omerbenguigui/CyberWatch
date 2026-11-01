@@ -4,17 +4,29 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-4e8cff)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-25d9e8)](https://fastapi.tiangolo.com/)
 
-CyberWatch is a lightweight security monitoring platform that ingests structured events,
-applies explainable detection rules, creates alerts, and presents the result in a responsive
-SOC dashboard. It was built as a portfolio project to demonstrate Python backend engineering,
-security fundamentals, API design, testing, and product-quality user experience.
+CyberWatch is a small security event monitoring application built with Python, FastAPI and
+SQLite. Send it structured events, inspect the rules that produced an alert, and record an
+investigation in the dashboard. The bundled scenarios generate synthetic telemetry, so the
+local demo can be explored without running attacks or collecting real logs.
 
 ![Animated CyberWatch product walkthrough](docs/images/cyberwatch-demo.gif)
 
 [Watch the full HD walkthrough](docs/demo/cyberwatch-walkthrough.mp4) ·
 [View the dashboard screenshot](docs/images/dashboard.png)
 
-## Highlights
+## Try the workflow
+
+Start the local application using the instructions below, then:
+
+1. Open the dashboard and choose one of the simulation scenarios.
+2. Inspect the resulting alert: source, rule, detection evidence and mapped technique.
+3. Change its status to **Investigating**, add an analyst note, then mark it **Resolved**.
+4. Filter the alert list by severity or status to review the result.
+
+The initial seed creates 42 events and three alerts in an empty database. Interactive
+simulations deliberately add new events; they are separate from that one-time seed.
+
+## Features
 
 - FastAPI REST API with automatic OpenAPI documentation
 - Real-time, rule-based detection for brute force, port scanning, and suspicious processes
@@ -26,7 +38,7 @@ security fundamentals, API design, testing, and product-quality user experience.
 - Responsive SOC dashboard with event and severity visualizations
 - Batch event ingestion and alert deduplication cooldowns
 - Synthetic demo-data generator (no real attack traffic required)
-- 20 automated tests, 96% coverage, linting, security scanning, and GitHub Actions CI
+- Automated tests, coverage reporting, linting, security scanning and GitHub Actions CI
 
 ## Architecture
 
@@ -45,11 +57,15 @@ alert includes a rule ID, evidence, source, severity, and human-readable explana
 
 ## Detection rules
 
+[MITRE ATT&CK](https://attack.mitre.org/) is the knowledge base used to label the techniques
+illustrated by the detection rules. **ATT&CK** is its official spelling. These mappings provide
+investigation context; they do not mean the application covers the full framework.
+
 | Rule ID | Detection | Trigger | Severity | MITRE ATT&CK |
 | --- | --- | --- | --- | --- |
-| `CW-AUTH-001` | Brute-force attempt | 5 failed logins from one IP in 5 minutes | High | `T1110` Brute Force |
-| `CW-NET-001` | Port scan | 10 distinct destination ports from one IP in 2 minutes | Critical | `T1046` Network Service Discovery |
-| `CW-ENDPOINT-001` | Suspicious process | Command line matches risky script-execution indicators | Critical | `T1059.001` PowerShell |
+| `CW-AUTH-001` | Brute-force attempt | 5 failed logins from one IP in 5 minutes | High | [`T1110` Brute Force](https://attack.mitre.org/techniques/T1110/) |
+| `CW-NET-001` | Port scan | 10 distinct destination ports from one IP in 2 minutes | Critical | [`T1046` Network Service Discovery](https://attack.mitre.org/techniques/T1046/) |
+| `CW-ENDPOINT-001` | Suspicious process | Command line matches risky script-execution indicators | Critical | [`T1059.001` PowerShell](https://attack.mitre.org/techniques/T1059/001/) |
 
 Repeated alerts for the same rule and source are suppressed for ten minutes to reduce analyst
 fatigue.
@@ -114,6 +130,21 @@ $env:CYBERWATCH_API_KEY="replace-with-a-long-random-value"
 docker compose up --build
 ```
 
+## Configuration
+
+Settings are read from environment variables; the default local demo needs no configuration.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `CYBERWATCH_ENV` | `development` | Set to `production` to disable synthetic simulations and require a non-default API key |
+| `CYBERWATCH_DATABASE_PATH` | `data/cyberwatch.db` | SQLite file location |
+| `CYBERWATCH_API_KEY` | `dev-key-change-me` | Key for ingestion and alert updates |
+| `CYBERWATCH_ALLOWED_ORIGINS` | `http://localhost:8000` | Comma-separated allowed browser origins |
+| `CYBERWATCH_PORT` | `8000` | Port used by the Windows launcher |
+
+The browser investigation form uses the development key. With a custom key, use the API for
+updates; the current frontend does not provide a key-entry or user-login screen.
+
 ## Ingest an event
 
 The development API key is `dev-key-change-me`. It must be overridden in production.
@@ -147,7 +178,8 @@ Supported event types are `login_success`, `login_failed`, `network_connection`,
 | `PATCH` | `/api/alerts/{id}/acknowledge` | API key | Triage an alert |
 | `PATCH` | `/api/alerts/{id}` | API key | Update status and analyst note |
 | `GET` | `/api/dashboard/summary` | No | Aggregated dashboard metrics |
-| `POST` | `/api/demo/simulate/{scenario}` | Local demo only | Generate safe synthetic attack telemetry |
+| `POST` | `/api/demo/simulate/{scenario}` | Disabled in production | Generate safe synthetic attack telemetry |
+| `GET` | `/api/demo/status` | No | Check whether simulations are enabled |
 
 ## Tests and quality checks
 
@@ -162,17 +194,29 @@ python -m build
 The test suite covers detection thresholds, time windows, duplicate suppression, authentication,
 event ingestion, safe attack simulations, alert investigation updates, and dashboard aggregation.
 
-## What I learned
+## Code guide
 
-Building CyberWatch strengthened my understanding of end-to-end backend development and
-defensive-security workflows: turning raw telemetry into explainable detections, designing a
-secure API, evolving a database schema safely, and presenting investigation context clearly to
-an analyst. I also practiced automated testing, CI, packaging, Docker, and documenting technical
-decisions so another developer can run and review the project quickly.
+| Path | Responsibility |
+| --- | --- |
+| [app/main.py](app/main.py) | Routes, API-key checks and application startup |
+| [app/models.py](app/models.py) | Event, alert and request schemas |
+| [app/database.py](app/database.py) | SQLite queries, transactions and alert persistence |
+| [app/detection.py](app/detection.py) | Detection thresholds, evidence and cooldowns |
+| [app/simulation.py](app/simulation.py) | Synthetic scenarios for the interactive demo |
+| [app/static/](app/static/) | Dashboard HTML, CSS and JavaScript |
+| [scripts/generate_demo_data.py](scripts/generate_demo_data.py) | Atomic seed for an empty database |
+| [tests/](tests/) | API, detection and demo regression tests |
+
+## Design choices
+
+FastAPI keeps request validation and API documentation close to the endpoint definitions.
+SQLite makes the local demo easy to run without a separate database service. The detection
+rules are explicit Python functions, with thresholds and evidence that can be inspected in
+the code. The frontend uses plain JavaScript and polls the API every ten seconds.
 
 ## Security decisions
 
-- Mutating endpoints use a constant-time API-key comparison.
+- Ingestion and alert-update endpoints use a constant-time API-key comparison.
 - SQL statements use parameters rather than string interpolation for user-controlled values.
 - Production startup fails when the default development API key is still configured.
 - Interactive attack simulations are disabled automatically in production mode.
@@ -183,7 +227,18 @@ decisions so another developer can run and review the project quickly.
 This project is an educational defensive-security tool. The bundled generator creates only
 synthetic events and does not perform network scanning or exploitation.
 
-## Future improvements
+## Current scope
+
+CyberWatch is an educational application, not a production SIEM. It accepts structured JSON;
+it does not collect endpoint logs, syslog or packet captures automatically. Read endpoints and
+the dashboard are public, and there are no user accounts, roles or rate limits. The simulation
+endpoint is unauthenticated outside production mode, so keep the development server local.
+
+The rules demonstrate three patterns and can produce false positives. SQLite and synchronous
+detection are suited to this demo's scale; no throughput or production availability guarantees
+are claimed. Analyst notes represent the current note, not an immutable audit history.
+
+## Possible extensions
 
 - PostgreSQL and asynchronous event queues for higher throughput
 - User accounts with role-based access control
@@ -194,4 +249,6 @@ synthetic events and does not perform network scanning or exploitation.
 
 ## Author
 
-**Omer Benguigui** — Computer Science student focused on software development and cybersecurity.
+**Omer Benguigui** — Computer Science student at Holon Institute of Technology.
+
+[More projects](https://github.com/omerbenguigui)
