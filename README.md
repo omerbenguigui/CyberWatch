@@ -11,13 +11,15 @@ local demo can be explored without running attacks or collecting real logs.
 
 ## Demo
 
-[![CyberWatch dashboard — watch the 32-second walkthrough](docs/images/demo-preview.png)](https://github.com/user-attachments/assets/d09fdb44-8cab-420d-8a34-ad34370ec333)
+[![CyberWatch dashboard — watch the 32-second walkthrough](docs/images/demo-preview.png)](#walkthrough)
 
 **[Watch the 32-second walkthrough](https://github.com/user-attachments/assets/d09fdb44-8cab-420d-8a34-ad34370ec333)** — press Play to start; pause or seek to inspect a step.
 
 The captioned walkthrough follows a real local demo session: dashboard overview,
 synthetic brute-force events, detection evidence, an analyst note and resolution.
 Each step stays on screen long enough to read. No audio is required.
+
+### Walkthrough
 
 https://github.com/user-attachments/assets/d09fdb44-8cab-420d-8a34-ad34370ec333
 
