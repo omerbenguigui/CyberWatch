@@ -9,9 +9,17 @@ SQLite. Send it structured events, inspect the rules that produced an alert, and
 investigation in the dashboard. The bundled scenarios generate synthetic telemetry, so the
 local demo can be explored without running attacks or collecting real logs.
 
-![Animated CyberWatch product walkthrough](docs/images/cyberwatch-demo.gif)
+## Demo
 
-[Watch the full HD walkthrough](docs/demo/cyberwatch-walkthrough.mp4) ·
+[![CyberWatch dashboard — watch the 32-second walkthrough](docs/images/demo-preview.png)](https://github.com/omerbenguigui/CyberWatch/blob/main/docs/demo/cyberwatch-walkthrough.mp4)
+
+**[Watch the 32-second walkthrough](https://github.com/omerbenguigui/CyberWatch/blob/main/docs/demo/cyberwatch-walkthrough.mp4)** — press Play to start; pause or seek to inspect a step.
+
+The captioned walkthrough follows a real local demo session: dashboard overview,
+synthetic brute-force events, detection evidence, an analyst note and resolution.
+Each step stays on screen long enough to read. No audio is required.
+
+[View the animated version](docs/images/cyberwatch-demo.gif) ·
 [View the dashboard screenshot](docs/images/dashboard.png)
 
 ## Try the workflow
